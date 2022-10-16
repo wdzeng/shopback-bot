@@ -17,7 +17,7 @@ interface OfferSearchData {
   items: ShopbackResponseData<ShopbackOffer>[]
 }
 
-export interface ShopbackOffer {
+interface ShopbackOffer {
   id: number
   title: string
   offerCashback: ShopbackOfferCashback

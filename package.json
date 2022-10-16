@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Follow shopback offers",
   "scripts": {
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node --transpile-only src/index.ts",
     "build": "tsc && ncc -m build out/index.js && rm -rf out",
     "clean": "rm -rf dist out"
   },
@@ -16,6 +16,7 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
-    "axios": "^1.1.3"
+    "axios": "^1.1.3",
+    "ts-custom-error": "^3.2.2"
   }
 }

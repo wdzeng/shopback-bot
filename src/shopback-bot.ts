@@ -1,10 +1,16 @@
+import { AxiosError } from 'axios'
 import * as ShopbackAPI from './api'
+import {
+  OfferAlreadyFollowedException,
+  OfferNotFoundException,
+} from './lang/errors'
 import { OfferList } from './lang/offer'
+import { ShopbackErrorResponse } from './lang/shopback-api'
 
 export interface IShopbackBot {
   getFollowedOffers(page: number, size: number): Promise<OfferList>
   searchOffers(keyword: string, page: number, size: number): Promise<OfferList>
-  followOffer(offerId: number): Promise<void>
+  followOffer(offerId: number, force: boolean): Promise<boolean>
 }
 
 export class ShopbackBot implements IShopbackBot {
@@ -29,9 +35,26 @@ export class ShopbackBot implements IShopbackBot {
     return ShopbackAPI.searchOffers(keyword, page, size)
   }
 
-  async followOffer(offerId: number): Promise<void> {
+  async followOffer(offerId: number, force: boolean): Promise<boolean> {
     await this.refreshAccessTokenIfNeeded()
-    return ShopbackAPI.followOffer(offerId, this.accessToken)
+    try {
+      await ShopbackAPI.followOffer(offerId, this.accessToken)
+      return true
+    } catch (e: unknown) {
+      if (e instanceof AxiosError) {
+        const error: ShopbackErrorResponse = e.response!.data
+        switch (error.error.code) {
+          case 60004:
+            if (force) {
+              return false
+            }
+            throw new OfferAlreadyFollowedException(offerId)
+          case 60011:
+            throw new OfferNotFoundException(offerId)
+        }
+      }
+      throw e
+    }
   }
 
   private refreshAccessTokenIfNeeded(): Promise<void> {

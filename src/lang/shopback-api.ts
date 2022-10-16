@@ -39,7 +39,8 @@ export interface ShopbackResponseData<T> {
 }
 
 interface ShopbackResponseItem<T> {
-  // TODO: Remove it if not used in the future and merge it with ShopbackResponseData.
+  // TODO: Remove it if not used in the future and merge it with
+  // ShopbackResponseData.  
   // It seems that this value is always 'group'.
   type: 'group'
   data: T

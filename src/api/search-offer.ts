@@ -59,7 +59,7 @@ export async function searchOffers(
   page: number,
   size: number
 ): Promise<OfferList> {
-  const startPage = page + 1 // 0-based to 1-based
+  const startPage = page + 1 // convert 0-based to 1-based
   const keywordEncode = encodeURI(keyword)
   const url = `https://api-app.shopback.com.tw/v2/search?keyword=${keywordEncode}&productPage=1&productSizePerPage=20&sbMartOfferSortBy=default&sbMartOfferPage=${startPage}&sbMartOfferSizePerPage=${size}&sbMartAdsOfferPageType=SEARCH&types%5B%5D=mart`
   const headers = {

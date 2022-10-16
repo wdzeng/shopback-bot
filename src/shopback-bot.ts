@@ -4,11 +4,12 @@ import {
   OfferAlreadyFollowedException,
   OfferNotFoundException,
 } from './lang/errors'
-import { OfferList } from './lang/offer'
-import { ShopbackErrorResponse } from './lang/shopback-api'
+import { Offer, OfferList } from './lang/offer'
+import { ShopbackErrorResponse, ShopbackMerchant } from './lang/shopback-api'
+import { mergeMerchants, sleep } from './utils'
 
 export interface IShopbackBot {
-  getFollowedOffers(page: number, size: number): Promise<OfferList>
+  getFollowedOffers(): Promise<OfferList>
   searchOffers(keyword: string, page: number, size: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
 }
@@ -22,9 +23,43 @@ export class ShopbackBot implements IShopbackBot {
     private userAgent: string
   ) {}
 
-  async getFollowedOffers(page: number, size: number): Promise<OfferList> {
-    await this.refreshAccessTokenIfNeeded()
-    return ShopbackAPI.getFollowedOffers(this.accessToken, page, size)
+  async getFollowedOffers(): Promise<OfferList> {
+    const size = 50
+    const offers: Offer[] = []
+    const merchants: ShopbackMerchant[] = []
+
+    let totalCount: null | number = null
+    let page = 0
+    while (totalCount === null || offers.length < totalCount) {
+      await this.refreshAccessTokenIfNeeded()
+      const offerList = await ShopbackAPI.getFollowedOffers(
+        this.accessToken,
+        page++,
+        size
+      )
+
+      if (offerList.offers.length === 0) {
+        // The real offer count may be changed if another user is doing some
+        // operation at the same time. In some case it may lead to infinite
+        // while loop. If we found no new offers, stop immediately.
+        break
+      }
+
+      if (totalCount === null) {
+        totalCount = offerList.offerCount
+      }
+      offers.concat(offerList.offers)
+      merchants.concat(offerList.merchants)
+
+      // Wait for a delay or else we are blocked by the Shopback server.
+      // 3 second should be enough.
+      await sleep(3 * 1000)
+    }
+
+    return {
+      offers,
+      merchants: mergeMerchants(merchants),
+    }
   }
 
   searchOffers(

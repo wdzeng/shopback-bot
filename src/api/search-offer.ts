@@ -9,6 +9,7 @@ import {
   SHOPBACK_AGENT,
   SHOPBACK_KEY,
 } from '../lang/shopback-api'
+import { mergeMerchants } from '../utils'
 
 type OfferSearchResponse = ShopbackSearchResponse<OfferSearchData>
 
@@ -66,17 +67,12 @@ export async function searchOffers(
   }
   const response = await axios.get<OfferSearchResponse>(url, { headers })
 
+  // Collect all ShopbackOffer object and remove ads
   const ofCollection = response.data.items[0].data.items
-    .filter(e => !e.data.adsTag) // remove ads
+    .filter(e => !e.data.adsTag)
     .map(e => e.data)
 
-  // Remove merchants from offer ads and duplicated merchants
-  const mcMap: { [key: number]: ShopbackMerchant } = {}
-  for (const m of ofCollection.map(o => o.merchants).flat()) {
-    mcMap[m.id] ||= m
-  }
-
   const offers = ofCollection.map(offerToDTO)
-  const merchants = Object.values(mcMap).sort((a, b) => a.id - b.id)
+  const merchants = mergeMerchants(ofCollection.map(o => o.merchants).flat())
   return { offers, merchants }
 }

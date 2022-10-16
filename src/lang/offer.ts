@@ -4,14 +4,14 @@ import {
   ShopbackProduct,
 } from './shopback-api'
 
-export interface OfferList {
-  offers: Offer[]
+interface IFollowList<T extends Offer> {
+  offers: T[]
   merchants: ShopbackMerchant[]
 }
 
-export interface FollowedOfferList extends OfferList {
-  offerCount: number
-}
+export type OfferList = IFollowList<Offer>
+
+export type FollowedOfferList = OfferList & { offerCount: number }
 
 export interface Offer {
   id: number

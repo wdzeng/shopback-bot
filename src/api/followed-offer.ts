@@ -9,9 +9,10 @@ import {
   SHOPBACK_URL_GRAPHQL,
 } from '../lang/shopback-api'
 
-type FollowedOfferResponse = ShopbackResponseData<FollowedOfferResponseData>
+type ShopbackFollowedOfferResponse =
+  ShopbackResponseData<ShopbackFollowedOfferResponseData>
 
-interface FollowedOfferResponseData {
+interface ShopbackFollowedOfferResponseData {
   followOffers: {
     total: number
     offers: ShopbackOffer[]
@@ -110,7 +111,7 @@ export async function getFollowedOffers(
     variables: { input: { page, size } },
     query: GRAPHQL_QUERY,
   }
-  const response = await axios.post<FollowedOfferResponse>(
+  const response = await axios.post<ShopbackFollowedOfferResponse>(
     SHOPBACK_URL_GRAPHQL,
     requestBody,
     { headers }

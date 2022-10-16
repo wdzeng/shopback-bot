@@ -11,9 +11,10 @@ import {
 } from '../lang/shopback-api'
 import { mergeMerchants } from '../utils'
 
-type OfferSearchResponse = ShopbackSearchResponse<OfferSearchData>
+type ShopbackOfferSearchResponse =
+  ShopbackSearchResponse<ShopbackOfferSearchData>
 
-interface OfferSearchData {
+interface ShopbackOfferSearchData {
   total: number
   items: ShopbackResponseData<ShopbackOffer>[]
 }
@@ -65,7 +66,9 @@ export async function searchOffers(
     'x-shopback-agent': SHOPBACK_AGENT,
     'x-shopback-key': SHOPBACK_KEY,
   }
-  const response = await axios.get<OfferSearchResponse>(url, { headers })
+  const response = await axios.get<ShopbackOfferSearchResponse>(url, {
+    headers,
+  })
 
   // Collect all ShopbackOffer object and remove ads
   const ofCollection = response.data.items[0].data.items

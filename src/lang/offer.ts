@@ -33,6 +33,4 @@ export interface Offer {
   merchantIds: number[]
 }
 
-export interface SearchedOffer extends Offer {
-  newFollowed: boolean
-}
+export type SearchedOffer = Offer & { newFollowed: boolean }

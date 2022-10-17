@@ -22,7 +22,7 @@ export interface IShopbackBot {
     size: number,
     parallel: number
   ): Promise<FollowedSearchedOfferList>
-  checkLoginAndGetUsername(): Promise<string>
+  getUsername(): Promise<string>
 }
 
 export class ShopbackBot implements IShopbackBot {
@@ -119,7 +119,7 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  async checkLoginAndGetUsername(): Promise<string> {
+  async getUsername(): Promise<string> {
     // TODO if failed to refresh then consider not login
     await this.refreshAccessToken()
 

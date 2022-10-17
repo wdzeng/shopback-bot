@@ -5,14 +5,29 @@ import {
   ShopbackOfferCashback,
   ShopbackProduct,
   ShopbackResponseData,
-  ShopbackSearchResponse,
   SHOPBACK_AGENT,
   SHOPBACK_KEY,
 } from '../lang/shopback-api'
 import { mergeMerchants } from '../utils'
 
-type ShopbackOfferSearchResponse =
-  ShopbackSearchResponse<ShopbackOfferSearchData>
+interface ShopbackOfferSearchResponse {
+  // TODO: Not sure what this is. Remove it if not used in the future.
+  filterV2: {
+    options: unknown[]
+  }
+  items: ShopbackOfferSearchResponseItem[] // length === 1
+  hasNextPage: boolean
+  // TODO: Not sure what this is. Remove it if not used in the future.
+  orcaRequestId: string
+}
+
+interface ShopbackOfferSearchResponseItem {
+  // TODO: Remove it if not used in the future and merge it with
+  // ShopbackResponseData.
+  // It seems that this value is always 'group'.
+  type: 'group'
+  data: ShopbackOfferSearchData
+}
 
 interface ShopbackOfferSearchData {
   total: number

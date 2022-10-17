@@ -25,26 +25,7 @@ export interface ShopbackErrorResponse {
   }
 }
 
-export interface ShopbackSearchResponse<T> {
-  // TODO: Not sure what this is. Remove it if not used in the future.
-  filterV2: {
-    options: unknown[]
-  }
-  items: ShopbackResponseItem<T>[]
-  hasNextPage: boolean
-  // TODO: Not sure what this is. Remove it if not used in the future.
-  orcaRequestId: string
-}
-
 export interface ShopbackResponseData<T> {
-  data: T
-}
-
-interface ShopbackResponseItem<T> {
-  // TODO: Remove it if not used in the future and merge it with
-  // ShopbackResponseData.  
-  // It seems that this value is always 'group'.
-  type: 'group'
   data: T
 }
 

@@ -17,7 +17,7 @@ import { mergeMerchants, sleep } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(): Promise<OfferList>
-  searchOffers(keyword: string, page: number, size: number): Promise<OfferList>
+  searchOffers(keyword: string, count: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
   followOffers(
     keyword: string,
@@ -75,12 +75,35 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  searchOffers(
-    keyword: string,
-    page: number,
-    size: number
-  ): Promise<OfferList> {
-    return ShopbackAPI.searchOffers(keyword, page, size)
+  async searchOffers(keyword: string, count: number): Promise<OfferList> {
+    // Query for 50 offers per search. If this number is greater than 50 then
+    // Shopback server responses 15 items only. Not know why.
+    const SEARCH_COUNT_PER_PAGE = 50
+
+    let offers: Offer[] = []
+    let merchants: ShopbackMerchant[] = []
+    let page = 0
+    let hasNextPage = true
+    while (hasNextPage && offers.length < count) {
+      const offerList = await ShopbackAPI.searchOffers(
+        keyword,
+        page++,
+        SEARCH_COUNT_PER_PAGE
+      )
+
+      offers = offers.concat(offerList.offers.slice(0, count - offers.length))
+      merchants = merchants.concat(offerList.merchants)
+
+      // If Shopback server replies with empty list then break the search.
+      // Otherwise this may lead to infinite loop.
+      hasNextPage = offerList.hasNextPage && offerList.offers.length > 0
+    }
+
+    return {
+      offers,
+      // TODO: remove unused merchant IDs
+      merchants: mergeMerchants(merchants),
+    }
   }
 
   async followOffer(offerId: number, force: boolean): Promise<boolean> {
@@ -126,7 +149,7 @@ export class ShopbackBot implements IShopbackBot {
     size: number,
     parallel: number
   ): Promise<FollowedSearchedOfferList> {
-    const searchList = await this.searchOffers(keyword, 0, size)
+    const searchList = await this.searchOffers(keyword, size)
 
     for (let i = 0; i < searchList.offers.length; i += parallel) {
       const offers = searchList.offers.slice(i, i + parallel)

@@ -1,4 +1,5 @@
 export { followOffer } from './follow-offer'
 export { getFollowedOffers } from './followed-offer'
+export { getProfile } from './profile'
 export { refreshAccessToken } from './refresh'
 export { searchOffers } from './search-offer'

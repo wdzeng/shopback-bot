@@ -1,6 +1,8 @@
 // Shopback apk version.
 export const SHOPBACK_AGENT = 'sbandroidagent/4.12.1'
 
+export const SHOPBACK_DOMAIN = 'www.shopback.com.tw'
+
 // Not sure what this key is for, but is irrelevant to users since it seems that
 // all Shopback clients share the same key.
 // https://github.com/gannasong/ShopBack/blob/3359ffb52a22661ce45ac123c444a1d242ebf0ca/ShopBack/Networking/Protocol/UserSession.swift#L27

@@ -14,6 +14,7 @@ export interface IShopbackBot {
   getFollowedOffers(): Promise<OfferList>
   searchOffers(keyword: string, page: number, size: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
+  checkLoginAndGetUsername(): Promise<string>
 }
 
 export class ShopbackBot implements IShopbackBot {
@@ -92,6 +93,22 @@ export class ShopbackBot implements IShopbackBot {
       }
       throw e
     }
+  }
+
+  async checkLoginAndGetUsername(): Promise<string> {
+    // TODO if failed to refresh then consider not login
+    await this.refreshAccessToken()
+
+    const profile = await ShopbackAPI.getProfile(
+      this.accessToken,
+      this.userAgent
+    )
+
+    if (profile.country !== 'TW') {
+      // TODO this bot is only for Taiwan users
+    }
+
+    return profile.name
   }
 
   private refreshAccessTokenIfNeeded(): Promise<void> {

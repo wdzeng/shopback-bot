@@ -1,15 +1,8 @@
-import fs from 'node:fs'
 import * as ShopbackAPI from './api'
 import { OfferAlreadyFollowedException } from './lang/errors'
-import {
-  OfferListFollowResult,
-  Offer,
-  OfferList,
-  SearchedOffer,
-} from './lang/offer'
+import { Offer, OfferList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants } from './utils'
-import { BotCredential, parsePlainCookie } from './utils/cookie'
 
 export interface IShopbackBot {
   getFollowedOffers(): Promise<OfferList>
@@ -149,16 +142,4 @@ export class ShopbackBot implements IShopbackBot {
     // For safety, shorten the timeout by 10 minutes
     this.tokenExpiredTime -= 10 * 60 * 1000
   }
-}
-
-export function buildBotFromCredential(credPath: string): ShopbackBot {
-  const plainCred = fs.readFileSync(credPath, 'utf-8')
-  let cred: BotCredential
-  try {
-    cred = JSON.parse(plainCred)
-  } catch (e) {
-    // Not a json, so a plain cookie
-    cred = parsePlainCookie(plainCred)
-  }
-  return new ShopbackBot(cred.accessToken, cred.refreshToken, cred.userAgent)
 }

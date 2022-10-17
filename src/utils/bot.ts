@@ -1,5 +1,7 @@
+import fs from 'node:fs'
 import { OfferListFollowResult, SearchedOffer } from '../lang/offer'
-import { IShopbackBot } from '../shopback-bot'
+import { IShopbackBot, ShopbackBot } from '../shopback-bot'
+import { BotCredential, parsePlainCookie } from './cookie'
 
 export async function followOffersByKeyword(
   bot: IShopbackBot,
@@ -20,4 +22,16 @@ export async function followOffersByKeyword(
   }
 
   return searchList as OfferListFollowResult
+}
+
+export function buildBotFromCredential(credPath: string): IShopbackBot {
+  const plainCred = fs.readFileSync(credPath, 'utf-8')
+  let cred: BotCredential
+  try {
+    cred = JSON.parse(plainCred)
+  } catch (e) {
+    // Not a json, so a plain cookie
+    cred = parsePlainCookie(plainCred)
+  }
+  return new ShopbackBot(cred.accessToken, cred.refreshToken, cred.userAgent)
 }

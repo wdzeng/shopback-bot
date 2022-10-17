@@ -73,7 +73,7 @@ export class ShopbackBot implements IShopbackBot {
 
     return {
       offers,
-      merchants: mergeMerchants(merchants),
+      merchants: mergeMerchants(merchants, offers),
     }
   }
 
@@ -103,8 +103,7 @@ export class ShopbackBot implements IShopbackBot {
 
     return {
       offers,
-      // TODO: remove unused merchant IDs
-      merchants: mergeMerchants(merchants),
+      merchants: mergeMerchants(merchants, offers),
     }
   }
 

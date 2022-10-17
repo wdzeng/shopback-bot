@@ -91,6 +91,9 @@ export async function searchOffers(
     .map(e => e.data)
 
   const offers = ofCollection.map(offerToDTO)
-  const merchants = mergeMerchants(ofCollection.map(o => o.merchants).flat())
+  const merchants = mergeMerchants(
+    ofCollection.map(o => o.merchants).flat(),
+    offers
+  )
   return { offers, merchants, hasNextPage: response.data.hasNextPage }
 }

@@ -56,10 +56,6 @@ export class ShopbackBot implements IShopbackBot {
         offerList.offers.slice(0, count && (count - offers.length))
       )
       merchants = merchants.concat(offerList.merchants)
-
-      // Wait for a delay or else we are blocked by the Shopback server.
-      // 3 second should be enough.
-      // await sleep(3 * 1000)
     }
 
     return {

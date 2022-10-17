@@ -22,7 +22,3 @@ export function mergeMerchants(
   }
   return ret
 }
-
-export function sleep(timeout: number): Promise<unknown> {
-  return new Promise(res => setTimeout(res, timeout))
-}

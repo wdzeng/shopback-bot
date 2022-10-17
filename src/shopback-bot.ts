@@ -11,7 +11,7 @@ import {
   SearchedOffer,
 } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
-import { mergeMerchants, sleep } from './utils'
+import { mergeMerchants } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(): Promise<OfferList>
@@ -66,7 +66,7 @@ export class ShopbackBot implements IShopbackBot {
 
       // Wait for a delay or else we are blocked by the Shopback server.
       // 3 second should be enough.
-      await sleep(3 * 1000)
+      // await sleep(3 * 1000)
     }
 
     return {

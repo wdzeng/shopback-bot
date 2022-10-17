@@ -1,6 +1,8 @@
+import fs from 'node:fs'
 import { AxiosError } from 'axios'
 import * as ShopbackAPI from './api'
 import {
+  InvalidCookieError,
   OfferAlreadyFollowedException,
   OfferNotFoundException,
 } from './lang/errors'
@@ -113,4 +115,57 @@ export class ShopbackBot implements IShopbackBot {
     // For safety, shorten the timeout by 10 minutes
     this.tokenExpiredTime -= 10 * 60 * 1000
   }
+}
+
+interface BotCredential {
+  refreshToken: string
+  accessToken: string
+  userAgent: string
+}
+
+function parsePlainCookie(cookieStr: string): BotCredential {
+  const firstLine = cookieStr.split('\n')[0].trim()
+  const cookies = firstLine.split(';')
+
+  let accessToken = ''
+  let refreshToken = ''
+  let userAgent = ''
+  for (let cookie of cookies) {
+    cookie = cookie.trim()
+    const indexEq = cookie.indexOf('=')
+    if (indexEq === -1) {
+      continue
+    }
+    const key = cookie.substring(0, indexEq)
+    const value = cookie.substring(indexEq + 1)
+    switch (key) {
+      case 'authDeviceId':
+        userAgent = value
+        break
+      case 'sbet':
+        accessToken = value
+        break
+      case 'sbrefresh': // cspell:disable-line
+        refreshToken = value
+        break
+    }
+  }
+
+  if (accessToken && refreshToken && userAgent) {
+    return { accessToken, refreshToken, userAgent }
+  }
+
+  throw new InvalidCookieError(cookieStr)
+}
+
+export function buildBotFromCredential(credPath: string): ShopbackBot {
+  const plainCred = fs.readFileSync(credPath, 'utf-8')
+  let cred: BotCredential
+  try {
+    cred = JSON.parse(plainCred)
+  } catch (e) {
+    // Not a json, so a plain cookie
+    cred = parsePlainCookie(plainCred)
+  }
+  return new ShopbackBot(cred.accessToken, cred.refreshToken, cred.userAgent)
 }

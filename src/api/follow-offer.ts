@@ -1,5 +1,10 @@
-import axios from 'axios'
-import { SHOPBACK_AGENT, SHOPBACK_KEY } from '../lang/shopback-api'
+import axios, { AxiosError } from 'axios'
+import { OfferNotFoundException } from '../lang/errors'
+import {
+  ShopbackErrorResponse,
+  SHOPBACK_AGENT,
+  SHOPBACK_KEY,
+} from '../lang/shopback-api'
 
 export async function followOffer(
   offerId: number,
@@ -11,6 +16,17 @@ export async function followOffer(
     'x-shopback-key': SHOPBACK_KEY,
     authorization: 'JWT ' + accessToken,
   }
-  await axios.post(url, null, { headers })
+
+  try {
+    await axios.post(url, null, { headers })
+  } catch (e: unknown) {
+    if (e instanceof AxiosError) {
+      const err: ShopbackErrorResponse = e.response?.data
+      if (err.error.code === 60011) {
+        throw new OfferNotFoundException(offerId)
+      }
+    }
+    throw e
+  }
   // TODO handle error
 }

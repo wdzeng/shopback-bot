@@ -1,10 +1,8 @@
 import fs from 'node:fs'
-import { AxiosError } from 'axios'
 import * as ShopbackAPI from './api'
 import {
   InvalidCookieError,
   OfferAlreadyFollowedException,
-  OfferNotFoundException,
 } from './lang/errors'
 import {
   FollowedSearchedOfferList,
@@ -12,7 +10,7 @@ import {
   OfferList,
   SearchedOffer,
 } from './lang/offer'
-import { ShopbackErrorResponse, ShopbackMerchant } from './lang/shopback-api'
+import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants, sleep } from './utils'
 
 export interface IShopbackBot {
@@ -113,17 +111,9 @@ export class ShopbackBot implements IShopbackBot {
       await ShopbackAPI.followOffer(offerId, this.accessToken)
       return true
     } catch (e: unknown) {
-      if (e instanceof AxiosError) {
-        const error: ShopbackErrorResponse = e.response!.data
-        switch (error.error.code) {
-          case 60004:
-            if (force) {
-              return false
-            }
-            throw new OfferAlreadyFollowedException(offerId)
-          case 60011:
-            throw new OfferNotFoundException(offerId)
-        }
+      if (e instanceof OfferAlreadyFollowedException && force) {
+        // ignore
+        return false
       }
       throw e
     }

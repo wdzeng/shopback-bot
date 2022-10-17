@@ -1,5 +1,8 @@
 import axios, { AxiosError } from 'axios'
-import { OfferNotFoundException } from '../lang/errors'
+import {
+  OfferAlreadyFollowedException,
+  OfferNotFoundException,
+} from '../lang/errors'
 import {
   ShopbackErrorResponse,
   SHOPBACK_AGENT,
@@ -21,9 +24,12 @@ export async function followOffer(
     await axios.post(url, null, { headers })
   } catch (e: unknown) {
     if (e instanceof AxiosError) {
-      const err: ShopbackErrorResponse = e.response?.data
-      if (err.error.code === 60011) {
-        throw new OfferNotFoundException(offerId)
+      const error: ShopbackErrorResponse = e.response!.data
+      switch (error.error.code) {
+        case 60004:
+          throw new OfferAlreadyFollowedException(offerId)
+        case 60011:
+          throw new OfferNotFoundException(offerId)
       }
     }
     throw e

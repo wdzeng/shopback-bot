@@ -6,7 +6,12 @@ import {
   OfferAlreadyFollowedException,
   OfferNotFoundException,
 } from './lang/errors'
-import { Offer, OfferList } from './lang/offer'
+import {
+  FollowedSearchedOfferList,
+  Offer,
+  OfferList,
+  SearchedOffer,
+} from './lang/offer'
 import { ShopbackErrorResponse, ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants, sleep } from './utils'
 
@@ -14,6 +19,11 @@ export interface IShopbackBot {
   getFollowedOffers(): Promise<OfferList>
   searchOffers(keyword: string, page: number, size: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
+  followOffers(
+    keyword: string,
+    size: number,
+    parallel: number
+  ): Promise<FollowedSearchedOfferList>
   checkLoginAndGetUsername(): Promise<string>
 }
 
@@ -109,6 +119,26 @@ export class ShopbackBot implements IShopbackBot {
     }
 
     return profile.name
+  }
+
+  async followOffers(
+    keyword: string,
+    size: number,
+    parallel: number
+  ): Promise<FollowedSearchedOfferList> {
+    const searchList = await this.searchOffers(keyword, 0, size)
+
+    for (let i = 0; i < searchList.offers.length; i += parallel) {
+      const offers = searchList.offers.slice(i, i + parallel)
+      const tasks = offers.map(o => this.followOffer(o.id, true))
+      const results = await Promise.all(tasks)
+      for (let j = 0; j < offers.length; j++) {
+        const tmp = searchList.offers[i + j] as SearchedOffer
+        tmp.newFollowed = results[j]
+      }
+    }
+
+    return searchList as FollowedSearchedOfferList
   }
 
   private refreshAccessTokenIfNeeded(): Promise<void> {

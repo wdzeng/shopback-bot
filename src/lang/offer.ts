@@ -13,6 +13,8 @@ export type OfferList = IFollowList<Offer>
 
 export type FollowedOfferList = OfferList & { offerCount: number }
 
+export type FollowedSearchedOfferList = IFollowList<SearchedOffer>
+
 export interface Offer {
   id: number
   title: string
@@ -27,4 +29,8 @@ export interface Offer {
   status: string
   products: ShopbackProduct[]
   merchantIds: number[]
+}
+
+export interface SearchedOffer extends Offer {
+  newFollowed: boolean
 }

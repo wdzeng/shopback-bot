@@ -1,4 +1,5 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
+import { NotLoggedInException } from '../lang/errors'
 import { SHOPBACK_AGENT, SHOPBACK_KEY } from '../lang/shopback-api'
 
 interface ShopbackRefreshTokenResponse {
@@ -22,10 +23,19 @@ export async function refreshAccessToken(
     'x-shopback-jwt-access-token': oldAccessToken,
     'x-shopback-member-refresh-token': refreshToken,
   }
-  const { data } = await axios.post<ShopbackRefreshTokenResponse>(
-    URL_API,
-    null,
-    { headers }
-  )
-  return data
+  try {
+    const { data } = await axios.post<ShopbackRefreshTokenResponse>(
+      URL_API,
+      null,
+      { headers }
+    )
+    return data
+  } catch (e: unknown) {
+    if (e instanceof AxiosError) {
+      if (e.response?.status === 403) {
+        throw new NotLoggedInException()
+      }
+    }
+    throw e
+  }
 }

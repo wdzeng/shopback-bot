@@ -11,6 +11,8 @@ interface IFollowList<T extends Offer> {
 
 export type OfferList = IFollowList<Offer>
 
+export type SearchedOfferList = OfferList & { hasNextPage: boolean }
+
 export type FollowedOfferList = OfferList & { offerCount: number }
 
 export type FollowedSearchedOfferList = IFollowList<SearchedOffer>

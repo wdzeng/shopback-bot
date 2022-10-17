@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { OfferList, Offer } from '../lang/offer'
+import { Offer, SearchedOfferList } from '../lang/offer'
 import {
   ShopbackMerchant,
   ShopbackOfferCashback,
@@ -73,7 +73,7 @@ export async function searchOffers(
   keyword: string,
   page: number,
   size: number
-): Promise<OfferList> {
+): Promise<SearchedOfferList> {
   const startPage = page + 1 // convert 0-based to 1-based
   const keywordEncode = encodeURI(keyword)
   const url = `https://api-app.shopback.com.tw/v2/search?keyword=${keywordEncode}&productPage=1&productSizePerPage=20&sbMartOfferSortBy=default&sbMartOfferPage=${startPage}&sbMartOfferSizePerPage=${size}&sbMartAdsOfferPageType=SEARCH&types%5B%5D=mart`
@@ -92,5 +92,5 @@ export async function searchOffers(
 
   const offers = ofCollection.map(offerToDTO)
   const merchants = mergeMerchants(ofCollection.map(o => o.merchants).flat())
-  return { offers, merchants }
+  return { offers, merchants, hasNextPage: response.data.hasNextPage }
 }

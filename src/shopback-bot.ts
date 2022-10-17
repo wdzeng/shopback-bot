@@ -61,8 +61,8 @@ export class ShopbackBot implements IShopbackBot {
       if (totalCount === null) {
         totalCount = offerList.offerCount
       }
-      offers.concat(offerList.offers)
-      merchants.concat(offerList.merchants)
+      offers = offers.concat(offerList.offers.slice())
+      merchants = merchants.concat(offerList.merchants)
 
       // Wait for a delay or else we are blocked by the Shopback server.
       // 3 second should be enough.

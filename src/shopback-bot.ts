@@ -37,10 +37,12 @@ export class ShopbackBot implements IShopbackBot {
   ) {}
 
   async getFollowedOffers(): Promise<OfferList> {
-    const size = 50
-    const offers: Offer[] = []
-    const merchants: ShopbackMerchant[] = []
+    // Query for 50 offers per search. If this number is greater than 50 then
+    // Shopback server responses 15 items only. Not know why.
+    const SEARCH_COUNT_PER_PAGE = 50
 
+    let offers: Offer[] = []
+    let merchants: ShopbackMerchant[] = []
     let totalCount: null | number = null
     let page = 0
     while (totalCount === null || offers.length < totalCount) {
@@ -48,13 +50,13 @@ export class ShopbackBot implements IShopbackBot {
       const offerList = await ShopbackAPI.getFollowedOffers(
         this.accessToken,
         page++,
-        size
+        SEARCH_COUNT_PER_PAGE
       )
 
+      // The real offer count may be changed if another user is doing some
+      // operation at the same time. In some case it may lead to infinite while
+      // loop. If we found no new offers, stop immediately.
       if (offerList.offers.length === 0) {
-        // The real offer count may be changed if another user is doing some
-        // operation at the same time. In some case it may lead to infinite
-        // while loop. If we found no new offers, stop immediately.
         break
       }
 

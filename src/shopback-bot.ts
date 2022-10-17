@@ -5,7 +5,7 @@ import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants } from './utils'
 
 export interface IShopbackBot {
-  getFollowedOffers(): Promise<OfferList>
+  getFollowedOffers(count?: number): Promise<OfferList>
   searchOffers(keyword: string, count: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
   getUsername(): Promise<string>
@@ -20,7 +20,7 @@ export class ShopbackBot implements IShopbackBot {
     private userAgent: string
   ) {}
 
-  async getFollowedOffers(): Promise<OfferList> {
+  async getFollowedOffers(count?: number): Promise<OfferList> {
     // Query for 50 offers per search. If this number is greater than 50 then
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
@@ -29,7 +29,10 @@ export class ShopbackBot implements IShopbackBot {
     let merchants: ShopbackMerchant[] = []
     let totalCount: null | number = null
     let page = 0
-    while (totalCount === null || offers.length < totalCount) {
+    while (
+      (totalCount === null || offers.length < totalCount) &&
+      (count === undefined || offers.length < count)
+    ) {
       await this.refreshAccessTokenIfNeeded()
       const offerList = await ShopbackAPI.getFollowedOffers(
         this.accessToken,
@@ -47,7 +50,11 @@ export class ShopbackBot implements IShopbackBot {
       if (totalCount === null) {
         totalCount = offerList.offerCount
       }
-      offers = offers.concat(offerList.offers.slice())
+
+      offers = offers.concat(
+        // prettier-ignore
+        offerList.offers.slice(0, count && (count - offers.length))
+      )
       merchants = merchants.concat(offerList.merchants)
 
       // Wait for a delay or else we are blocked by the Shopback server.

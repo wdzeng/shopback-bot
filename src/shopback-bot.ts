@@ -51,7 +51,7 @@ function parsePlainCookie(cookieStr: string): BotCredential | null {
     const key = cookie.substring(0, indexEq)
     const value = cookie.substring(indexEq + 1)
     switch (key) {
-      case 'authDeviceId':
+      case 'profileID':
         clientUserAgent = value
         break
       case 'sbet':

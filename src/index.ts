@@ -2,7 +2,7 @@ import { Command } from 'commander'
 import * as ExitCode from './lang/exit-code'
 import { OfferList } from './lang/offer'
 import { ShopbackBot } from './shopback-bot'
-import { toNonNegativeInt } from './utils'
+import { handleError, toNonNegativeInt } from './utils'
 
 type JsonOption = { json: boolean }
 type LimitOption = { limit: number }
@@ -11,7 +11,6 @@ type ForceOption = { force: boolean }
 
 type SearchOption = JsonOption & LimitOption & ForceOption
 async function search(keywords: string[], options: SearchOption) {
-  const bot = new ShopbackBot()
   function listener(offers: OfferList) {
     for (const offer of offers.offers) {
       console.log('* ' + offer.title)
@@ -19,13 +18,29 @@ async function search(keywords: string[], options: SearchOption) {
     }
   }
 
-  const searchResult = await bot.searchOffers(
-    keywords,
-    options.limit || undefined,
-    options.json ? undefined : listener
-  )
+  let result: OfferList
+
+  try {
+    const bot = new ShopbackBot()
+    result = await bot.searchOffers(
+      keywords,
+      options.limit || undefined,
+      options.json ? undefined : listener
+    )
+  } catch (e: unknown) {
+    handleError(e)
+  }
+
   if (options.json) {
-    console.log(JSON.stringify(searchResult))
+    console.log(JSON.stringify(result))
+  } else {
+    if (result.offers.length === 0) {
+      console.error('No offers found.')
+    }
+  }
+
+  if (result.offers.length === 0 && !options.force) {
+    process.exit(ExitCode.EMPTY_OFFER_RESULT)
   }
 }
 

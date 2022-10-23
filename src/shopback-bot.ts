@@ -6,17 +6,14 @@ import {
   OfferAlreadyFollowedException,
   InvalidCookieError,
 } from './lang/errors'
-import { Offer, OfferList, OfferListFollowResult } from './lang/offer'
+import { Offer, OfferList, OfferSearchList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(limit?: number): Promise<OfferList>
   searchOffers(keywords: string[], limit?: number): Promise<OfferList>
-  followOffersByKeywords(
-    keywords: string[],
-    limit?: number
-  ): Promise<OfferListFollowResult>
+  followOffersByKeywords(keywords: string[], limit?: number): Promise<OfferList>
   getUsername(): Promise<string>
 }
 
@@ -97,7 +94,7 @@ export class ShopbackBot implements IShopbackBot {
       }
 
       if (totalCount === null) {
-        totalCount = offerList.offerCount
+        totalCount = offerList.totalCount
       }
 
       offers = offers.concat(
@@ -125,7 +122,7 @@ export class ShopbackBot implements IShopbackBot {
       let page = 0
       let hasNextPage = true
       while (hasNextPage && limit !== undefined && offers.length < limit) {
-        const offerList = await ShopbackAPI.searchOffers(
+        const offerList: OfferSearchList = await ShopbackAPI.searchOffers(
           keyword,
           page++,
           SEARCH_COUNT_PER_PAGE
@@ -167,11 +164,11 @@ export class ShopbackBot implements IShopbackBot {
   async followOffersByKeywords(
     keywords: string[],
     limit?: number
-  ): Promise<OfferListFollowResult> {
+  ): Promise<OfferList> {
     const TASK_COUNT = 50
 
     const { offers, merchants } = await this.searchOffers(keywords, limit)
-    const ret: OfferListFollowResult = { offers: [], merchants }
+    const ret: OfferList = { offers: [], merchants }
 
     for (let i = 0; i < offers.length; i += TASK_COUNT) {
       const tasks = offers

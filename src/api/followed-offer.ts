@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { FollowedOfferList, Offer } from '../lang/offer'
+import { OfferFollowList, Offer } from '../lang/offer'
 import {
   ShopbackMerchant,
   ShopbackOfferCashback,
@@ -101,7 +101,7 @@ export async function getFollowedOffers(
   accessToken: string,
   page: number,
   size: number
-): Promise<FollowedOfferList> {
+): Promise<OfferFollowList> {
   const headers = {
     authorization: 'JWT ' + accessToken,
     'x-shopback-key': SHOPBACK_KEY,
@@ -118,7 +118,7 @@ export async function getFollowedOffers(
   )
 
   return {
-    offerCount: response.data.data.followOffers.total,
+    totalCount: response.data.data.followOffers.total,
     offers: response.data.data.followOffers.offers.map(offerToDTO),
     merchants: response.data.data.merchants.merchants,
   }

@@ -2,9 +2,9 @@ import assert from 'node:assert'
 import fs from 'node:fs'
 import * as ShopbackAPI from './api'
 import {
-  UserNotLoggedInException,
+  InvalidCredentialFileException,
   OfferAlreadyFollowedException,
-  InvalidCookieError,
+  UserNotLoggedInException,
 } from './lang/errors'
 import { Offer, OfferList, OfferSearchList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
@@ -34,7 +34,7 @@ interface BotCredential {
   clientUserAgent: string
 }
 
-function parsePlainCookie(cookieStr: string): BotCredential {
+function parsePlainCookie(cookieStr: string): BotCredential | null {
   const firstLine = cookieStr.split('\n')[0].trim()
   const cookies = firstLine.split(';')
 
@@ -66,7 +66,7 @@ function parsePlainCookie(cookieStr: string): BotCredential {
     return { accessToken, refreshToken, clientUserAgent }
   }
 
-  throw new InvalidCookieError(cookieStr)
+  return null
 }
 
 type SearchOfferListener = (offerList: OfferList) => any
@@ -144,44 +144,41 @@ export class ShopbackBot implements IShopbackBot {
     // Query for 50 offers per search. If this number is greater than 50 then
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
-
-    let offers: Offer[] = []
-    let merchants: ShopbackMerchant[] = []
+    const offerList: OfferList = { offers: [], merchants: [] }
 
     for (const keyword of keywords) {
       let page = 0
       let hasNextPage = true
-      while (hasNextPage && limit !== undefined && offers.length < limit) {
-        const offerList: OfferSearchList = await ShopbackAPI.searchOffers(
+      let offerCount = 0
+
+      while (hasNextPage && limit !== undefined && offerCount < limit) {
+        const subOfferList: OfferSearchList = await ShopbackAPI.searchOffers(
           keyword,
           page++,
           SEARCH_COUNT_PER_PAGE
         )
 
-        offerList.offers = offerList.offers.slice(
+        subOfferList.offers = subOfferList.offers.slice(
           0,
           // prettier-ignore
-          limit && (limit - offers.length)
+          limit && (limit - offerCount)
         )
-        offerList.merchants = mergeMerchants(
-          offerList.merchants,
-          offerList.offers
+        subOfferList.merchants = mergeMerchants(
+          subOfferList.merchants,
+          subOfferList.offers
         )
-        listener?.(offerList)
 
-        offers = offers.concat(offerList.offers)
-        merchants = merchants.concat(offerList.merchants)
+        offerCount += subOfferList.offers.length
+        listener?.(subOfferList)
+        mergeOfferList(offerList, subOfferList)
 
         // If Shopback server replies with empty list then break the search.
         // Otherwise this may lead to infinite loop.
-        hasNextPage = offerList.hasNextPage && offerList.offers.length > 0
+        hasNextPage = subOfferList.hasNextPage && subOfferList.offers.length > 0
       }
     }
 
-    return {
-      offers,
-      merchants: mergeMerchants(merchants, offers),
-    }
+    return offerList
   }
 
   private async followOffer(offerId: number, force: boolean): Promise<boolean> {
@@ -191,9 +188,10 @@ export class ShopbackBot implements IShopbackBot {
       await ShopbackAPI.followOffer(offerId, this.auth.accessToken)
       return true
     } catch (e: unknown) {
-      if (e instanceof OfferAlreadyFollowedException && force) {
-        // ignore
-        return false
+      if (e instanceof OfferAlreadyFollowedException) {
+        if (force) {
+          return false // ignore
+        }
       }
       throw e
     }
@@ -281,11 +279,18 @@ export class ShopbackBot implements IShopbackBot {
 
   private loadCredential() {
     if (!this.credPath) {
-      throw new UserNotLoggedInException('Credential path not specified.')
+      throw new InvalidCredentialFileException('Credential path not specified.')
     }
 
-    // TODO handle read error
-    const plainCred = fs.readFileSync(this.credPath, 'utf-8')
+    let plainCred: string
+    try {
+      plainCred = fs.readFileSync(this.credPath, 'utf-8')
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        throw new InvalidCredentialFileException(e.message)
+      }
+      throw e
+    }
 
     try {
       this.auth = JSON.parse(plainCred)
@@ -294,11 +299,18 @@ export class ShopbackBot implements IShopbackBot {
         !this.auth?.clientUserAgent ||
         !this.auth?.refreshToken
       ) {
-        throw new InvalidCookieError(plainCred)
+        throw new InvalidCredentialFileException(
+          'Invalid credential syntax: ' + this.credPath
+        )
       }
     } catch (e) {
-      // Not a json, so a plain cookie
-      this.auth = parsePlainCookie(plainCred)
+      const cred = parsePlainCookie(plainCred)
+      if (cred === null) {
+        throw new InvalidCredentialFileException(
+          'Cannot parse cookie: ' + this.credPath
+        )
+      }
+      this.auth = cred
     }
   }
 

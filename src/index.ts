@@ -46,6 +46,26 @@ async function list(options: ListOption) {
   }
 }
 
+type FollowOptions = JsonOption & LimitOption & CredentialOption
+async function follow(keywords: string[], options: FollowOptions) {
+  const bot = new ShopbackBot(options.credential)
+  function listener(offers: OfferList, followed: boolean[]) {
+    for (let i = 0; i < offers.offers.length; i++) {
+      const msg = (followed[i] ? '[+] ' : '[#] ') + offers.offers[i].title
+      console.log(msg)
+    }
+  }
+
+  const result = await bot.followOffersByKeywords(
+    keywords,
+    options.limit || undefined,
+    options.json ? undefined : listener
+  )
+  if (options.json) {
+    console.log(JSON.stringify(result))
+  }
+}
+
 const version = '0.0.0'
 const majorVersion = version.split('.')[0]
 const program = new Command()
@@ -78,5 +98,19 @@ mainProgram
   .option('-J, --json', 'output JSON format', false)
   .requiredOption('-c, --credential <FILE>', 'credential file')
   .action(list)
+
+mainProgram
+  .command('follow')
+  .description('Follow offer(s).')
+  .option('-n, --limit <INT>', 'list at most N offers', toNonNegativeInt, 0)
+  .argument('<keyword...>', 'keyword to search')
+  .option(
+    '-n, --limit <INT>',
+    'search at most N offers for each keyword',
+    toNonNegativeInt,
+    1
+  )
+  .requiredOption('-c, --credential <FILE>', 'credential file')
+  .action(follow)
 
 mainProgram.parse()

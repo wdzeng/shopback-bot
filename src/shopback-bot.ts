@@ -8,8 +8,8 @@ import { ShopbackMerchant } from './lang/shopback-api'
 import { BotCredential, mergeMerchants } from './utils'
 
 export interface IShopbackBot {
-  getFollowedOffers(count?: number): Promise<OfferList>
-  searchOffers(keyword: string, count: number): Promise<OfferList>
+  getFollowedOffers(limit?: number): Promise<OfferList>
+  searchOffers(keyword: string, limit?: number): Promise<OfferList>
   followOffer(offerId: number, force: boolean): Promise<boolean>
   getUsername(): Promise<string>
 }
@@ -19,7 +19,7 @@ export class ShopbackBot implements IShopbackBot {
 
   constructor(private auth?: BotCredential) {}
 
-  async getFollowedOffers(count?: number): Promise<OfferList> {
+  async getFollowedOffers(limit?: number): Promise<OfferList> {
     // Query for 50 offers per search. If this number is greater than 50 then
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
@@ -30,7 +30,7 @@ export class ShopbackBot implements IShopbackBot {
     let page = 0
     while (
       (totalCount === null || offers.length < totalCount) &&
-      (count === undefined || offers.length < count)
+      (limit === undefined || offers.length < limit)
     ) {
       await this.refreshAccessTokenIfNeeded()
       const offerList = await ShopbackAPI.getFollowedOffers(
@@ -52,7 +52,7 @@ export class ShopbackBot implements IShopbackBot {
 
       offers = offers.concat(
         // prettier-ignore
-        offerList.offers.slice(0, count && (count - offers.length))
+        offerList.offers.slice(0, limit && (limit - offers.length))
       )
       merchants = merchants.concat(offerList.merchants)
     }
@@ -63,7 +63,7 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  async searchOffers(keyword: string, count: number): Promise<OfferList> {
+  async searchOffers(keyword: string, limit?: number): Promise<OfferList> {
     // Query for 50 offers per search. If this number is greater than 50 then
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
@@ -72,14 +72,17 @@ export class ShopbackBot implements IShopbackBot {
     let merchants: ShopbackMerchant[] = []
     let page = 0
     let hasNextPage = true
-    while (hasNextPage && offers.length < count) {
+    while (hasNextPage && limit !== undefined && offers.length < limit) {
       const offerList = await ShopbackAPI.searchOffers(
         keyword,
         page++,
         SEARCH_COUNT_PER_PAGE
       )
 
-      offers = offers.concat(offerList.offers.slice(0, count - offers.length))
+      offers = offers.concat(
+        // prettier-ignore
+        offerList.offers.slice(0, limit && (limit - offers.length))
+      )
       merchants = merchants.concat(offerList.merchants)
 
       // If Shopback server replies with empty list then break the search.

@@ -197,8 +197,6 @@ export class ShopbackBot implements IShopbackBot {
   }
 
   private async followOffer(offerId: number, force: boolean): Promise<boolean> {
-    await this.refreshAccessToken()
-
     logger.debug('Following offer: ' + offerId)
 
     try {
@@ -230,6 +228,8 @@ export class ShopbackBot implements IShopbackBot {
       const { offers, merchants } = await this.searchOffers([keyword], limit)
 
       for (let i = 0; i < offers.length; i += TASK_COUNT) {
+        await this.refreshAccessToken()
+
         logger.info(`Following offers for ${keyword} page ${i + 1}.`)
 
         const subOffers = offers.slice(i, i + TASK_COUNT)

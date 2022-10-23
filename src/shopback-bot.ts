@@ -26,7 +26,7 @@ export interface IShopbackBot {
     limit?: number,
     listener?: FollowOfferListener
   ): Promise<OfferList>
-  getUsername(): Promise<string>
+  validateUserLogin(): Promise<void>
 }
 
 interface BotCredential {
@@ -229,8 +229,7 @@ export class ShopbackBot implements IShopbackBot {
     return offerList
   }
 
-  async getUsername(): Promise<string> {
-    // TODO if failed to refresh then consider not login
+  async validateUserLogin(): Promise<void> {
     await this.refreshAccessToken()
 
     assert(this.auth)
@@ -242,8 +241,6 @@ export class ShopbackBot implements IShopbackBot {
     if (profile.country !== 'TW') {
       throw new UserNotInTaiwanException()
     }
-
-    return profile.name
   }
 
   private refreshAccessTokenIfNeeded(): Promise<void> {

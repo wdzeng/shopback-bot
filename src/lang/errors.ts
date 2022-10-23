@@ -23,3 +23,9 @@ export class InvalidCredentialFileException extends CustomError {
     super(msg)
   }
 }
+
+export class UserNotInTaiwanException extends CustomError {
+  constructor() {
+    super('This user is not in Taiwan.')
+  }
+}

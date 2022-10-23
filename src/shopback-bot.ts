@@ -4,6 +4,7 @@ import * as ShopbackAPI from './api'
 import {
   InvalidCredentialFileException,
   OfferAlreadyFollowedException,
+  UserNotInTaiwanException,
   UserNotLoggedInException,
 } from './lang/errors'
 import { Offer, OfferList, OfferSearchList } from './lang/offer'
@@ -239,7 +240,7 @@ export class ShopbackBot implements IShopbackBot {
     )
 
     if (profile.country !== 'TW') {
-      // TODO this bot is only for Taiwan users
+      throw new UserNotInTaiwanException()
     }
 
     return profile.name

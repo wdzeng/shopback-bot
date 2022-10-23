@@ -96,6 +96,7 @@ mainProgram
 mainProgram
   .command('list')
   .description('List my offers.')
+  .requiredOption('-c, --credential <FILE>', 'credential file')
   .option('-n, --limit <INT>', 'list at most N offers', toNonNegativeInt, 0)
   .option('-J, --json', 'output JSON format', false)
   .option('-f, --force', 'suppress error if no ay offer is followed', false)
@@ -104,8 +105,9 @@ mainProgram
 mainProgram
   .command('follow')
   .description('Follow offer(s).')
-  .option('-n, --limit <INT>', 'list at most N offers', toNonNegativeInt, 0)
   .argument('<keyword...>', 'keyword to search')
+  .requiredOption('-c, --credential <FILE>', 'credential file')
+  .option('-n, --limit <INT>', 'list at most N offers', toNonNegativeInt, 0)
   .option(
     '-n, --limit <INT>',
     'search at most N offers for each keyword',

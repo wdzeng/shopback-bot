@@ -96,7 +96,7 @@ export class ShopbackBot implements IShopbackBot {
       (totalCount === null || offers.length < totalCount) &&
       (limit === undefined || offers.length < limit)
     ) {
-      await this.refreshAccessTokenIfNeeded()
+      await this.refreshAccessToken()
       assert(this.auth)
 
       const offerList = await ShopbackAPI.getFollowedOffers(
@@ -183,7 +183,7 @@ export class ShopbackBot implements IShopbackBot {
   }
 
   private async followOffer(offerId: number, force: boolean): Promise<boolean> {
-    await this.refreshAccessTokenIfNeeded()
+    await this.refreshAccessToken()
     try {
       assert(this.auth)
       await ShopbackAPI.followOffer(offerId, this.auth.accessToken)
@@ -243,14 +243,12 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  private refreshAccessTokenIfNeeded(): Promise<void> {
-    if (!this.tokenExpiredTime || Date.now() > this.tokenExpiredTime) {
-      return this.refreshAccessToken()
-    }
-    return Promise.resolve()
-  }
-
   private async refreshAccessToken(): Promise<void> {
+    const now = Date.now()
+    if (this.tokenExpiredTime && now <= this.tokenExpiredTime) {
+      return
+    }
+
     if (this.auth === undefined) {
       if (this.credPath === undefined) {
         throw new UserNotLoggedInException('No cookies detected.')

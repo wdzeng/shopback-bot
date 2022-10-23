@@ -12,7 +12,11 @@ import { mergeMerchants } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(limit?: number): Promise<OfferList>
-  searchOffers(keywords: string[], limit?: number): Promise<OfferList>
+  searchOffers(
+    keywords: string[],
+    limit?: number,
+    listener?: SearchOfferListener
+  ): Promise<OfferList>
   followOffersByKeywords(keywords: string[], limit?: number): Promise<OfferList>
   getUsername(): Promise<string>
 }
@@ -57,6 +61,8 @@ function parsePlainCookie(cookieStr: string): BotCredential {
 
   throw new InvalidCookieError(cookieStr)
 }
+
+type SearchOfferListener = (offerList: OfferList) => any
 
 export class ShopbackBot implements IShopbackBot {
   private tokenExpiredTime: null | number = null
@@ -110,7 +116,11 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  async searchOffers(keywords: string[], limit?: number): Promise<OfferList> {
+  async searchOffers(
+    keywords: string[],
+    limit?: number,
+    listener?: SearchOfferListener
+  ): Promise<OfferList> {
     // Query for 50 offers per search. If this number is greater than 50 then
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
@@ -127,6 +137,7 @@ export class ShopbackBot implements IShopbackBot {
           page++,
           SEARCH_COUNT_PER_PAGE
         )
+        listener?.(offerList)
 
         offers = offers.concat(
           // prettier-ignore

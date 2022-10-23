@@ -188,9 +188,9 @@ export class ShopbackBot implements IShopbackBot {
         throw new UserNotLoggedInException('No cookies detected.')
       }
       this.loadCredential()
+      assert(this.auth)
     }
 
-    assert(this.auth)
     const newToken = await ShopbackAPI.refreshAccessToken(
       this.auth.accessToken,
       this.auth.refreshToken,

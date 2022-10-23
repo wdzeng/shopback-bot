@@ -1,4 +1,4 @@
-import { Offer } from '../lang/offer'
+import { Offer, OfferList } from '../lang/offer'
 import { ShopbackMerchant } from '../lang/shopback-api'
 
 export function mergeMerchants(
@@ -21,4 +21,9 @@ export function mergeMerchants(
     }
   }
   return ret
+}
+
+export function mergeOfferList(a: OfferList, b: OfferList) {
+  a.offers = a.offers.concat(b.offers)
+  a.merchants = mergeMerchants(a.merchants.concat(b.merchants), a.offers)
 }

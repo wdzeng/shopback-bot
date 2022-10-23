@@ -137,12 +137,19 @@ export class ShopbackBot implements IShopbackBot {
           page++,
           SEARCH_COUNT_PER_PAGE
         )
+
+        offerList.offers = offerList.offers.slice(
+          0,
+          // prettier-ignore
+          limit && (limit - offers.length)
+        )
+        offerList.merchants = mergeMerchants(
+          offerList.merchants,
+          offerList.offers
+        )
         listener?.(offerList)
 
-        offers = offers.concat(
-          // prettier-ignore
-          offerList.offers.slice(0, limit && (limit - offers.length))
-        )
+        offers = offers.concat(offerList.offers)
         merchants = merchants.concat(offerList.merchants)
 
         // If Shopback server replies with empty list then break the search.

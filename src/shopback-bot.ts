@@ -1,8 +1,10 @@
 import assert from 'node:assert'
+import fs from 'node:fs'
 import * as ShopbackAPI from './api'
 import {
   UserNotLoggedInException,
   OfferAlreadyFollowedException,
+  InvalidCookieError,
 } from './lang/errors'
 import { Offer, OfferList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
@@ -19,6 +21,41 @@ interface BotCredential {
   refreshToken: string
   accessToken: string
   clientUserAgent: string
+}
+
+function parsePlainCookie(cookieStr: string): BotCredential {
+  const firstLine = cookieStr.split('\n')[0].trim()
+  const cookies = firstLine.split(';')
+
+  let accessToken = ''
+  let refreshToken = ''
+  let clientUserAgent = ''
+  for (let cookie of cookies) {
+    cookie = cookie.trim()
+    const indexEq = cookie.indexOf('=')
+    if (indexEq === -1) {
+      continue
+    }
+    const key = cookie.substring(0, indexEq)
+    const value = cookie.substring(indexEq + 1)
+    switch (key) {
+      case 'authDeviceId':
+        clientUserAgent = value
+        break
+      case 'sbet':
+        accessToken = value
+        break
+      case 'sbrefresh': // cspell:disable-line
+        refreshToken = value
+        break
+    }
+  }
+
+  if (accessToken && refreshToken && clientUserAgent) {
+    return { accessToken, refreshToken, clientUserAgent }
+  }
+
+  throw new InvalidCookieError(cookieStr)
 }
 
 export class ShopbackBot implements IShopbackBot {
@@ -150,7 +187,7 @@ export class ShopbackBot implements IShopbackBot {
       if (this.credPath === undefined) {
         throw new UserNotLoggedInException('No cookies detected.')
       }
-      // TODO
+      this.loadCredential()
     }
 
     assert(this.auth)
@@ -166,5 +203,28 @@ export class ShopbackBot implements IShopbackBot {
     this.tokenExpiredTime += newToken.expires_in * 1000
     // For safety, shorten the timeout by 10 minutes
     this.tokenExpiredTime -= 10 * 60 * 1000
+  }
+
+  private loadCredential() {
+    if (!this.credPath) {
+      throw new UserNotLoggedInException('Credential path not specified.')
+    }
+
+    // TODO handle read error
+    const plainCred = fs.readFileSync(this.credPath, 'utf-8')
+
+    try {
+      this.auth = JSON.parse(plainCred)
+      if (
+        !this.auth?.accessToken ||
+        !this.auth?.clientUserAgent ||
+        !this.auth?.refreshToken
+      ) {
+        throw new InvalidCookieError(plainCred)
+      }
+    } catch (e) {
+      // Not a json, so a plain cookie
+      this.auth = parsePlainCookie(plainCred)
+    }
   }
 }

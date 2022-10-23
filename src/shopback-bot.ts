@@ -6,14 +6,17 @@ import {
   OfferAlreadyFollowedException,
   InvalidCookieError,
 } from './lang/errors'
-import { Offer, OfferList } from './lang/offer'
+import { Offer, OfferList, OfferListFollowResult } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(limit?: number): Promise<OfferList>
   searchOffers(keywords: string[], limit?: number): Promise<OfferList>
-  followOffer(offerId: number, force: boolean): Promise<boolean>
+  followOffersByKeywords(
+    keywords: string[],
+    limit?: number
+  ): Promise<OfferListFollowResult>
   getUsername(): Promise<string>
 }
 
@@ -159,6 +162,31 @@ export class ShopbackBot implements IShopbackBot {
       }
       throw e
     }
+  }
+
+  async followOffersByKeywords(
+    keywords: string[],
+    limit?: number
+  ): Promise<OfferListFollowResult> {
+    const TASK_COUNT = 50
+
+    const { offers, merchants } = await this.searchOffers(keywords, limit)
+    const ret: OfferListFollowResult = { offers: [], merchants }
+
+    for (let i = 0; i < offers.length; i += TASK_COUNT) {
+      const tasks = offers
+        .slice(i, i + TASK_COUNT)
+        .map(x => this.followOffer(x.id, true))
+      const taskResult = await Promise.all(tasks)
+      for (let j = 0; j < taskResult.length; j++) {
+        if (taskResult[j]) {
+          ret.offers.push(offers[i + j])
+        }
+      }
+    }
+
+    ret.merchants = mergeMerchants(ret.merchants, ret.offers)
+    return ret
   }
 
   async getUsername(): Promise<string> {

@@ -10,6 +10,7 @@ import {
 import { Offer, OfferList, OfferSearchList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
 import { mergeMerchants, mergeOfferList } from './utils'
+import * as logger from './utils/logger'
 
 export interface IShopbackBot {
   getFollowedOffers(
@@ -37,6 +38,7 @@ interface BotCredential {
 
 function parsePlainCookie(cookieStr: string): BotCredential | null {
   const firstLine = cookieStr.split('\n')[0].trim()
+  logger.debug('Read cookie: ' + firstLine)
   const cookies = firstLine.split(';')
 
   let accessToken = ''
@@ -53,12 +55,15 @@ function parsePlainCookie(cookieStr: string): BotCredential | null {
     switch (key) {
       case 'profileID':
         clientUserAgent = value
+        logger.debug('Read client user agent: ' + value)
         break
       case 'sbet':
         accessToken = value
+        logger.debug('Read access token: ' + value)
         break
       case 'sbrefresh': // cspell:disable-line
         refreshToken = value
+        logger.debug('Read refresh token: ' + value)
         break
     }
   }
@@ -88,6 +93,8 @@ export class ShopbackBot implements IShopbackBot {
     // Shopback server responses 15 items only. Not know why.
     const SEARCH_COUNT_PER_PAGE = 50
 
+    logger.info('Querying followed offers.')
+
     let offers: Offer[] = []
     let merchants: ShopbackMerchant[] = []
     let totalCount: null | number = null
@@ -98,6 +105,8 @@ export class ShopbackBot implements IShopbackBot {
     ) {
       await this.refreshAccessToken()
       assert(this.auth)
+
+      logger.debug('Querying followed offers page ' + (page + 1) + '.')
 
       const offerList = await ShopbackAPI.getFollowedOffers(
         this.auth.accessToken,
@@ -153,6 +162,8 @@ export class ShopbackBot implements IShopbackBot {
       let offerCount = 0
 
       while (hasNextPage && limit !== undefined && offerCount < limit) {
+        logger.info(`Searching keyword ${keyword} page ${page + 1}.`)
+
         const subOfferList: OfferSearchList = await ShopbackAPI.searchOffers(
           keyword,
           page++,
@@ -177,19 +188,27 @@ export class ShopbackBot implements IShopbackBot {
         // Otherwise this may lead to infinite loop.
         hasNextPage = subOfferList.hasNextPage && subOfferList.offers.length > 0
       }
+
+      logger.debug(`Keyword ${keyword} searched. Got ${offerCount}.`)
     }
 
+    logger.debug(`Search completed. Got ${offerList.offers.length}.`)
     return offerList
   }
 
   private async followOffer(offerId: number, force: boolean): Promise<boolean> {
     await this.refreshAccessToken()
+
+    logger.debug('Following offer: ' + offerId)
+
     try {
       assert(this.auth)
       await ShopbackAPI.followOffer(offerId, this.auth.accessToken)
+      logger.debug('Offer followed: ' + offerId)
       return true
     } catch (e: unknown) {
       if (e instanceof OfferAlreadyFollowedException) {
+        logger.debug('Offer already followed: ' + offerId)
         if (force) {
           return false // ignore
         }
@@ -211,6 +230,8 @@ export class ShopbackBot implements IShopbackBot {
       const { offers, merchants } = await this.searchOffers([keyword], limit)
 
       for (let i = 0; i < offers.length; i += TASK_COUNT) {
+        logger.info(`Following offers for ${keyword} page ${i + 1}.`)
+
         const subOffers = offers.slice(i, i + TASK_COUNT)
         const tasks = subOffers.map(x => this.followOffer(x.id, true))
         const taskResult = await Promise.all(tasks)
@@ -224,6 +245,8 @@ export class ShopbackBot implements IShopbackBot {
       }
 
       mergeOfferList(offerList, subOfferList)
+
+      logger.debug('Offers ' + keyword + ' all followed.')
     }
 
     return offerList
@@ -231,6 +254,8 @@ export class ShopbackBot implements IShopbackBot {
 
   async validateUserLogin(): Promise<void> {
     await this.refreshAccessToken()
+
+    logger.info('Checking user credential.')
 
     assert(this.auth)
     const profile = await ShopbackAPI.getProfile(
@@ -241,11 +266,14 @@ export class ShopbackBot implements IShopbackBot {
     if (profile.country !== 'TW') {
       throw new UserNotInTaiwanException()
     }
+
+    logger.info('Logged in as ' + profile.name)
   }
 
   private async refreshAccessToken(): Promise<void> {
     const now = Date.now()
     if (this.tokenExpiredTime && now <= this.tokenExpiredTime) {
+      logger.debug('Skip refreshing access token.')
       return
     }
 
@@ -256,6 +284,8 @@ export class ShopbackBot implements IShopbackBot {
       this.loadCredential()
       assert(this.auth)
     }
+
+    logger.info('Refreshing access token.')
 
     const newToken = await ShopbackAPI.refreshAccessToken(
       this.auth.accessToken,
@@ -270,6 +300,8 @@ export class ShopbackBot implements IShopbackBot {
     // For safety, shorten the timeout by 10 minutes
     this.tokenExpiredTime -= 10 * 60 * 1000
 
+    logger.debug('Access token refreshed.')
+
     this.saveCredential()
   }
 
@@ -277,6 +309,8 @@ export class ShopbackBot implements IShopbackBot {
     if (!this.credPath) {
       throw new InvalidCredentialFileException('Credential path not specified.')
     }
+
+    logger.info('Loading credential.')
 
     let plainCred: string
     try {
@@ -290,6 +324,8 @@ export class ShopbackBot implements IShopbackBot {
 
     try {
       this.auth = JSON.parse(plainCred)
+      logger.debug('Parse JSON to generate credential.')
+
       if (
         !this.auth?.accessToken ||
         !this.auth?.clientUserAgent ||
@@ -300,6 +336,10 @@ export class ShopbackBot implements IShopbackBot {
         )
       }
     } catch (e) {
+      logger.debug(
+        'Cannot parse JSON to generate credential. Try parsing raw cookie.'
+      )
+
       const cred = parsePlainCookie(plainCred)
       if (cred === null) {
         throw new InvalidCredentialFileException(
@@ -308,6 +348,8 @@ export class ShopbackBot implements IShopbackBot {
       }
       this.auth = cred
     }
+
+    logger.debug('Credential loaded.')
   }
 
   private saveCredential() {
@@ -319,6 +361,8 @@ export class ShopbackBot implements IShopbackBot {
       throw new UserNotLoggedInException('Cannot save credential: no cookies.')
     }
 
+    logger.info('Saving credential.')
     fs.writeFileSync(this.credPath, JSON.stringify(this.auth), 'utf-8')
+    logger.debug('Credential saved.')
   }
 }

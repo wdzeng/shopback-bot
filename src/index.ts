@@ -46,19 +46,34 @@ async function search(keywords: string[], options: SearchOption) {
 
 type ListOption = JsonOption & LimitOption & CredentialOption & ForceOption
 async function list(options: ListOption) {
-  const bot = new ShopbackBot(options.credential)
   function listener(offers: OfferList) {
     for (const offer of offers.offers) {
       console.log('* ' + offer.title)
     }
   }
 
-  const offers = await bot.getFollowedOffers(
-    options.limit || undefined,
-    options.json ? undefined : listener
-  )
+  let result: OfferList
+  try {
+    const bot = new ShopbackBot(options.credential)
+    await bot.validateUserLogin()
+
+    result = await bot.getFollowedOffers(
+      options.limit || undefined,
+      options.json ? undefined : listener
+    )
+  } catch (e: unknown) {
+    handleError(e)
+  }
+
   if (options.json) {
-    console.log(JSON.stringify(offers))
+    console.log(JSON.stringify(result))
+  } else {
+    if (result.offers.length === 0) {
+      console.log('No offers found.')
+    }
+  }
+  if (result.offers.length === 0 && !options.force) {
+    process.exit(ExitCode.EMPTY_OFFER_RESULT)
   }
 }
 

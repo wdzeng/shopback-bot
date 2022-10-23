@@ -1,8 +1,11 @@
 import * as ShopbackAPI from './api'
-import { OfferAlreadyFollowedException } from './lang/errors'
+import {
+  UserNotLoggedInException,
+  OfferAlreadyFollowedException,
+} from './lang/errors'
 import { Offer, OfferList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
-import { mergeMerchants } from './utils'
+import { BotCredential, mergeMerchants } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(count?: number): Promise<OfferList>
@@ -14,11 +17,7 @@ export interface IShopbackBot {
 export class ShopbackBot implements IShopbackBot {
   private tokenExpiredTime: null | number = null
 
-  constructor(
-    private accessToken: string,
-    private refreshToken: string,
-    private userAgent: string
-  ) {}
+  constructor(private auth?: BotCredential) {}
 
   async getFollowedOffers(count?: number): Promise<OfferList> {
     // Query for 50 offers per search. If this number is greater than 50 then
@@ -35,7 +34,7 @@ export class ShopbackBot implements IShopbackBot {
     ) {
       await this.refreshAccessTokenIfNeeded()
       const offerList = await ShopbackAPI.getFollowedOffers(
-        this.accessToken,
+        this.auth!.accessToken,
         page++,
         SEARCH_COUNT_PER_PAGE
       )
@@ -97,7 +96,7 @@ export class ShopbackBot implements IShopbackBot {
   async followOffer(offerId: number, force: boolean): Promise<boolean> {
     await this.refreshAccessTokenIfNeeded()
     try {
-      await ShopbackAPI.followOffer(offerId, this.accessToken)
+      await ShopbackAPI.followOffer(offerId, this.auth!.accessToken)
       return true
     } catch (e: unknown) {
       if (e instanceof OfferAlreadyFollowedException && force) {
@@ -113,8 +112,8 @@ export class ShopbackBot implements IShopbackBot {
     await this.refreshAccessToken()
 
     const profile = await ShopbackAPI.getProfile(
-      this.accessToken,
-      this.userAgent
+      this.auth!.accessToken,
+      this.auth!.clientUserAgent
     )
 
     if (profile.country !== 'TW') {
@@ -132,13 +131,17 @@ export class ShopbackBot implements IShopbackBot {
   }
 
   private async refreshAccessToken(): Promise<void> {
+    if (this.auth === undefined) {
+      throw new UserNotLoggedInException('No cookies detected.')
+    }
+
     const newToken = await ShopbackAPI.refreshAccessToken(
-      this.accessToken,
-      this.refreshToken,
-      this.userAgent
+      this.auth.accessToken,
+      this.auth.refreshToken,
+      this.auth.clientUserAgent
     )
-    this.accessToken = newToken.access_token
-    this.refreshToken = newToken.refresh_token
+    this.auth.accessToken = newToken.access_token
+    this.auth.refreshToken = newToken.refresh_token
 
     this.tokenExpiredTime = Date.now()
     this.tokenExpiredTime += newToken.expires_in * 1000

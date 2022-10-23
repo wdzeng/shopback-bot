@@ -33,5 +33,5 @@ export function buildBotFromCredential(credPath: string): IShopbackBot {
     // Not a json, so a plain cookie
     cred = parsePlainCookie(plainCred)
   }
-  return new ShopbackBot(cred.accessToken, cred.refreshToken, cred.userAgent)
+  return new ShopbackBot(cred)
 }

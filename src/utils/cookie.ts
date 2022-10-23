@@ -3,7 +3,7 @@ import { InvalidCookieError } from "../lang/errors"
 export interface BotCredential {
   refreshToken: string
   accessToken: string
-  userAgent: string
+  clientUserAgent: string
 }
 
 export function parsePlainCookie(cookieStr: string): BotCredential {
@@ -12,7 +12,7 @@ export function parsePlainCookie(cookieStr: string): BotCredential {
 
   let accessToken = ''
   let refreshToken = ''
-  let userAgent = ''
+  let clientUserAgent = ''
   for (let cookie of cookies) {
     cookie = cookie.trim()
     const indexEq = cookie.indexOf('=')
@@ -23,7 +23,7 @@ export function parsePlainCookie(cookieStr: string): BotCredential {
     const value = cookie.substring(indexEq + 1)
     switch (key) {
       case 'authDeviceId':
-        userAgent = value
+        clientUserAgent = value
         break
       case 'sbet':
         accessToken = value
@@ -34,8 +34,8 @@ export function parsePlainCookie(cookieStr: string): BotCredential {
     }
   }
 
-  if (accessToken && refreshToken && userAgent) {
-    return { accessToken, refreshToken, userAgent }
+  if (accessToken && refreshToken && clientUserAgent) {
+    return { accessToken, refreshToken, clientUserAgent }
   }
 
   throw new InvalidCookieError(cookieStr)

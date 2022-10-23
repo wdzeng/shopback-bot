@@ -7,8 +7,9 @@ import { toNonNegativeInt } from './utils'
 type JsonOption = { json: boolean }
 type LimitOption = { limit: number }
 type CredentialOption = { credential: string }
+type ForceOption = { force: boolean }
 
-type SearchOption = JsonOption & LimitOption
+type SearchOption = JsonOption & LimitOption & ForceOption
 async function search(keywords: string[], options: SearchOption) {
   const bot = new ShopbackBot()
   function listener(offers: OfferList) {
@@ -28,7 +29,7 @@ async function search(keywords: string[], options: SearchOption) {
   }
 }
 
-type ListOption = JsonOption & LimitOption & CredentialOption
+type ListOption = JsonOption & LimitOption & CredentialOption & ForceOption
 async function list(options: ListOption) {
   const bot = new ShopbackBot(options.credential)
   function listener(offers: OfferList) {
@@ -46,7 +47,7 @@ async function list(options: ListOption) {
   }
 }
 
-type FollowOptions = JsonOption & LimitOption & CredentialOption
+type FollowOptions = JsonOption & LimitOption & CredentialOption & ForceOption
 async function follow(keywords: string[], options: FollowOptions) {
   const bot = new ShopbackBot(options.credential)
   function listener(offers: OfferList, followed: boolean[]) {
@@ -89,6 +90,7 @@ mainProgram
     10
   )
   .option('-J, --json', 'output JSON format', false)
+  .option('-f, --force', 'suppress error if no ay offer is followed', false)
   .action(search)
 
 mainProgram
@@ -96,7 +98,7 @@ mainProgram
   .description('List my offers.')
   .option('-n, --limit <INT>', 'list at most N offers', toNonNegativeInt, 0)
   .option('-J, --json', 'output JSON format', false)
-  .requiredOption('-c, --credential <FILE>', 'credential file')
+  .option('-f, --force', 'suppress error if no ay offer is followed', false)
   .action(list)
 
 mainProgram
@@ -110,7 +112,7 @@ mainProgram
     toNonNegativeInt,
     1
   )
-  .requiredOption('-c, --credential <FILE>', 'credential file')
+  .option('-f, --force', 'suppress error if no ay offer is followed', false)
   .action(follow)
 
 mainProgram.parse()

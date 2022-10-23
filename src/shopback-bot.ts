@@ -8,7 +8,7 @@ import {
 } from './lang/errors'
 import { Offer, OfferList, OfferSearchList } from './lang/offer'
 import { ShopbackMerchant } from './lang/shopback-api'
-import { mergeMerchants } from './utils'
+import { mergeMerchants, mergeOfferList } from './utils'
 
 export interface IShopbackBot {
   getFollowedOffers(
@@ -20,7 +20,11 @@ export interface IShopbackBot {
     limit?: number,
     listener?: SearchOfferListener
   ): Promise<OfferList>
-  followOffersByKeywords(keywords: string[], limit?: number): Promise<OfferList>
+  followOffersByKeywords(
+    keywords: string[],
+    limit?: number,
+    listener?: FollowOfferListener
+  ): Promise<OfferList>
   getUsername(): Promise<string>
 }
 
@@ -67,6 +71,7 @@ function parsePlainCookie(cookieStr: string): BotCredential {
 
 type SearchOfferListener = (offerList: OfferList) => any
 type FollowedOfferListener = (OfferList: OfferList, totalCount: number) => any
+type FollowOfferListener = (offerList: OfferList, followed: boolean[]) => any
 
 export class ShopbackBot implements IShopbackBot {
   private tokenExpiredTime: null | number = null
@@ -196,27 +201,33 @@ export class ShopbackBot implements IShopbackBot {
 
   async followOffersByKeywords(
     keywords: string[],
-    limit?: number
+    limit?: number,
+    listener?: FollowOfferListener
   ): Promise<OfferList> {
     const TASK_COUNT = 50
+    const offerList: OfferList = { offers: [], merchants: [] }
 
-    const { offers, merchants } = await this.searchOffers(keywords, limit)
-    const ret: OfferList = { offers: [], merchants }
+    for (const keyword of keywords) {
+      const subOfferList: OfferList = { offers: [], merchants: [] }
+      const { offers, merchants } = await this.searchOffers([keyword], limit)
 
-    for (let i = 0; i < offers.length; i += TASK_COUNT) {
-      const tasks = offers
-        .slice(i, i + TASK_COUNT)
-        .map(x => this.followOffer(x.id, true))
-      const taskResult = await Promise.all(tasks)
-      for (let j = 0; j < taskResult.length; j++) {
-        if (taskResult[j]) {
-          ret.offers.push(offers[i + j])
+      for (let i = 0; i < offers.length; i += TASK_COUNT) {
+        const subOffers = offers.slice(i, i + TASK_COUNT)
+        const tasks = subOffers.map(x => this.followOffer(x.id, true))
+        const taskResult = await Promise.all(tasks)
+        const stillSubOfferList: OfferList = {
+          offers: subOffers,
+          merchants: mergeMerchants(merchants, subOffers),
         }
+
+        listener?.(stillSubOfferList, taskResult)
+        mergeOfferList(subOfferList, stillSubOfferList)
       }
+
+      mergeOfferList(offerList, subOfferList)
     }
 
-    ret.merchants = mergeMerchants(ret.merchants, ret.offers)
-    return ret
+    return offerList
   }
 
   async getUsername(): Promise<string> {

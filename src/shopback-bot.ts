@@ -203,6 +203,8 @@ export class ShopbackBot implements IShopbackBot {
     this.tokenExpiredTime += newToken.expires_in * 1000
     // For safety, shorten the timeout by 10 minutes
     this.tokenExpiredTime -= 10 * 60 * 1000
+
+    this.saveCredential()
   }
 
   private loadCredential() {
@@ -226,5 +228,17 @@ export class ShopbackBot implements IShopbackBot {
       // Not a json, so a plain cookie
       this.auth = parsePlainCookie(plainCred)
     }
+  }
+
+  private saveCredential() {
+    if (!this.credPath) {
+      return
+    }
+
+    if (!this.auth) {
+      throw new UserNotLoggedInException('Cannot save credential: no cookies.')
+    }
+
+    fs.writeFileSync(this.credPath, JSON.stringify(this.auth), 'utf-8')
   }
 }

@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { NotLoggedInException } from '../lang/errors'
+import { UserNotLoggedInException } from '../lang/errors'
 import { SHOPBACK_AGENT, SHOPBACK_KEY } from '../lang/shopback-api'
 
 interface ShopbackRefreshTokenResponse {
@@ -33,7 +33,7 @@ export async function refreshAccessToken(
   } catch (e: unknown) {
     if (e instanceof AxiosError) {
       if (e.response?.status === 403) {
-        throw new NotLoggedInException()
+        throw new UserNotLoggedInException('User is not logged in.')
       }
     }
     throw e

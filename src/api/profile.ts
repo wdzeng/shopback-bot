@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios'
-import { NotLoggedInException } from '../lang/errors'
+import { UserNotLoggedInException } from '../lang/errors'
 import { Profile } from '../lang/profile'
 import {
   ShopbackErrorResponse,
@@ -43,7 +43,7 @@ export async function getProfile(
     if (e instanceof AxiosError) {
       const err: ShopbackErrorResponse = e.response!.data
       if (err.error.code === 50002 || err.error.code === 20031) {
-        throw new NotLoggedInException()
+        throw new UserNotLoggedInException('User is not logged in.')
       }
     }
     throw e

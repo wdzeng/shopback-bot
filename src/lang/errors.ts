@@ -1,8 +1,8 @@
 import { CustomError } from 'ts-custom-error'
 
-export class NotLoggedInException extends CustomError {
-  constructor() {
-    super('User is not logged in.')
+export class UserNotLoggedInException extends CustomError {
+  constructor(msg: string) {
+    super(msg)
   }
 }
 

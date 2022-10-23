@@ -184,7 +184,7 @@ export class ShopbackBot implements IShopbackBot {
     }
   }
 
-  async followOffer(offerId: number, force: boolean): Promise<boolean> {
+  private async followOffer(offerId: number, force: boolean): Promise<boolean> {
     await this.refreshAccessTokenIfNeeded()
     try {
       assert(this.auth)

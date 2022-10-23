@@ -1,7 +1,8 @@
 import fs from 'node:fs'
+import { BotCredential, parsePlainCookie } from './cookie'
+import { mergeMerchants } from './merchants'
 import { OfferListFollowResult, SearchedOffer } from '../lang/offer'
 import { IShopbackBot, ShopbackBot } from '../shopback-bot'
-import { BotCredential, parsePlainCookie } from './cookie'
 
 export async function followOffersByKeyword(
   bot: IShopbackBot,

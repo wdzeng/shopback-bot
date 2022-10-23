@@ -79,7 +79,6 @@ async function list(options: ListOption) {
 
 type FollowOptions = JsonOption & LimitOption & CredentialOption & ForceOption
 async function follow(keywords: string[], options: FollowOptions) {
-  const bot = new ShopbackBot(options.credential)
   function listener(offers: OfferList, followed: boolean[]) {
     for (let i = 0; i < offers.offers.length; i++) {
       const msg = (followed[i] ? '[+] ' : '[#] ') + offers.offers[i].title
@@ -87,13 +86,30 @@ async function follow(keywords: string[], options: FollowOptions) {
     }
   }
 
-  const result = await bot.followOffersByKeywords(
-    keywords,
-    options.limit || undefined,
-    options.json ? undefined : listener
-  )
+  let result: OfferList
+  try {
+    const bot = new ShopbackBot(options.credential)
+    await bot.validateUserLogin()
+
+    result = await bot.followOffersByKeywords(
+      keywords,
+      options.limit || undefined,
+      options.json ? undefined : listener
+    )
+  } catch (e: unknown) {
+    handleError(e)
+  }
+
   if (options.json) {
     console.log(JSON.stringify(result))
+  } else {
+    if (result.offers.length === 0) {
+      console.log('No offers found.')
+    }
+  }
+
+  if (result.offers.length === 0 && !options.force) {
+    process.exit(ExitCode.EMPTY_OFFER_RESULT)
   }
 }
 

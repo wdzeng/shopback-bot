@@ -21,7 +21,7 @@ jobs:
           run_install: true
       - name: Build project
         run: pnpm build
-      - name: Build mage
+      - name: Build image
         uses: wdzeng/image@v2
         with:
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}

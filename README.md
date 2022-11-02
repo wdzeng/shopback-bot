@@ -105,6 +105,7 @@ Exit code 如下表所示。
 ### 其他 Exit Code
 
 | Exit Code | 解釋 |
+| --------- | ---- |
 | 2 | Cookie 檔案不合法。 |
 | 3 | 不是台灣 Shopback 帳號。 |
 | 4 | Shopback 伺服器回傳錯誤訊息。 |

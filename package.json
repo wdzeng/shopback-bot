@@ -1,6 +1,6 @@
 {
   "name": "shopback-bot",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Follow shopback offers",
   "scripts": {
     "dev": "ts-node --transpile-only src/index.ts",

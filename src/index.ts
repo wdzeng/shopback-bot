@@ -113,7 +113,7 @@ async function follow(keywords: string[], options: FollowOptions) {
   }
 }
 
-const version = '0.0.0'
+const version = '1.0.0'
 const majorVersion = version.split('.')[0]
 const program = new Command()
 const mainProgram = program

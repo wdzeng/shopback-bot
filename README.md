@@ -1,5 +1,9 @@
 # Shopback Bot
 
+[![release](https://badgen.net/github/release/wdzeng/shopback-bot/stable?color=red)](https://github.com/wdzeng/shopback-bot/releases/latest)
+[![github](https://badgen.net/badge/icon/github/black?icon=github&label=)](https://github.com/wdzeng/shopback-bot)
+[![docker](https://badgen.net/badge/icon/docker?icon=docker&label=)](https://hub.docker.com/repository/docker/hyperbola/shopback-bot)
+
 這是一個可以幫你登記 Shopback 發票回饋的機器人。
 
 Shopback 發票回饋必須在結帳前事先登記，才能領取回饋。發票回饋通常一樣商品一個星期限一次，因此就算要在很閒的時候先登記好，但如果有很多需要潛在商品要登記的話，就會變得很麻煩。

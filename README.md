@@ -52,7 +52,6 @@ Exit code 如下表所示。
 以下示範登記優酪乳前 5 名和紅茶前 5 名的優惠券。
 
 ```sh
-TODO: command
 hyperbola/shopback-bot:1 follow -n 5 '優酪乳' '紅茶'
 ```
 

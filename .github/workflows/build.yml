@@ -26,7 +26,6 @@ jobs:
         with:
           dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
           dockerhub-password: ${{ secrets.DOCKERHUB_TOKEN }}
-          init: false
           platforms: linux/amd64,linux/arm64
           repo-description: Follow offers on Shopback
           repo-license: MIT

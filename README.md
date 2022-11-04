@@ -32,7 +32,7 @@ hyperbola/shopback-bot:1 search -n 50 '優酪乳' '紅茶'
 通用指令格式如下。
 
 ```sh
-bot search [options...] <keyword>
+hyperbola/shopback-bot:1 search [options...] <keyword>
 ```
 
 可用的 option 如下。
@@ -61,7 +61,7 @@ hyperbola/shopback-bot:1 follow -n 5 '優酪乳' '紅茶'
 通用指令格式如下。
 
 ```sh
-bot follow-all [options...] <keywords...>
+hyperbola/shopback-bot:1 follow [options...] <keywords...>
 ```
 
 可用的 option 如下。除非標示必填，所有選項都是選填。
